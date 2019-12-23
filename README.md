@@ -1,0 +1,1 @@
+A cheap android device can provide internet, video-calling, etc for IoT type projects. ObedientDroid provides a api to use raspberrypi + cheap android phones to automate tethering, ssh endpoint, video-calling, etc. This doesn't require hotspot or root on the phone.
