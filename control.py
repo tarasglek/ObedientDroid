@@ -9,7 +9,6 @@ def run(cmd):
 
 def ensure_screen_on():
     if "Display Power: state=OFF" in run("adb shell dumpsys power"):
-        print("state=off")
         run("adb shell input keyevent 82;sleep 1;adb shell input keyevent 82;")
     # lines =  [line for line in run("adb shell dumpsys power").split("\n") if "mHoldingDisplaySuspendBlocker" in line]
     # print("locked")
@@ -20,7 +19,7 @@ def termux():
     ensure_screen_on()
     run("adb shell am start -n com.termux/.app.TermuxActivity")
 
-def main():
+def vpn(endpoint):
     run("adb forward tcp:8022 tcp:8022")
     termux()
     # figure out local addresses to exclude from sshuttle
@@ -37,7 +36,14 @@ def main():
     # get netmask and local ip
     ip = addr_info['local']
     netmask = addr_info['prefixlen']
-    run(f"sshuttle -v -x {ip}/{netmask}  --python python2 -r localhost:8022 0/0")
+    # dont do interactive prompts
+    ssh_opts = "-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    ssh = f"""ssh -R 7777:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
+    # --python python2
+    run(f"""sshuttle --dns -e '{ssh}' -x {ip}/{netmask} -r {endpoint} 0/0""")
 
+def main(mode, arg):
+    if mode == "vpn":
+        vpn(arg)
 if __name__ == "__main__":
-    main()
+    main(*sys.argv[1:])
