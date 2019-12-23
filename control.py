@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from subprocess import check_output, call
 import json
 import sys
@@ -37,13 +38,24 @@ def vpn(endpoint):
     ip = addr_info['local']
     netmask = addr_info['prefixlen']
     # dont do interactive prompts
-    ssh_opts = "-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    ssh_opts = " -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
     ssh = f"""ssh -R 7777:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
     # --python python2
     run(f"""sshuttle --dns -e '{ssh}' -x {ip}/{netmask} -r {endpoint} 0/0""")
 
+# per https://vic.demuzere.be/articles/using-systemd-user-units/
+def enable_startup(endpoint):
+    run("mkdir -p ~/.config/systemd/user/ && cp android-tether.service ~/.config/systemd/user/")
+    run(f"sed -i s':SSH_ENDPOINT:{endpoint}:' ~/.config/systemd/user/android-tether.service")
+    run("systemctl --user daemon-reload")
+    run("sudo loginctl enable-linger $USER")
+    run("systemctl --user enable android-tether")
+
 def main(mode, arg):
     if mode == "vpn":
         vpn(arg)
+    elif mode == "enable-startup":
+        enable_startup(arg)
+
 if __name__ == "__main__":
     main(*sys.argv[1:])
