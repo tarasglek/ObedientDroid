@@ -39,9 +39,10 @@ def vpn(endpoint):
     netmask = addr_info['prefixlen']
     # dont do interactive prompts
     ssh_opts = " -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-    ssh = f"""ssh -R 7777:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
+    ssh = f"""ssh -R 6666:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
     # --python python2
     run(f"""sshuttle --dns -e '{ssh}' -x {ip}/{netmask} -r {endpoint} 0/0""")
+    sys.exit(1)
 
 # per https://vic.demuzere.be/articles/using-systemd-user-units/
 def enable_startup(endpoint):

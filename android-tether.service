@@ -8,7 +8,7 @@ Description=a permanent tunnel using adb and sshuttle
 After=network.target
 
 [Service]
-ExecStart=%h/android/control.py vpn SSH_ENDPOINT
+ExecStart=%h/ObedientDroid/control.py vpn SSH_ENDPOINT
 Restart=always
 RestartSec=30
 Type=simple
