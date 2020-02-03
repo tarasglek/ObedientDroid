@@ -21,7 +21,10 @@ def termux():
     run("adb shell am start -n com.termux/.app.TermuxActivity")
 
 def vpn(endpoint):
+    run("adb kill-server")
     run("adb forward tcp:8022 tcp:8022")
+    #ensure forward worked
+    print(run("adb forward --list |  grep tcp:8022"))
     termux()
     # figure out local addresses to exclude from sshuttle
     # TODO: wonder how ip route output looks like when there is no outside routing
@@ -38,8 +41,8 @@ def vpn(endpoint):
     ip = addr_info['local']
     netmask = addr_info['prefixlen']
     # dont do interactive prompts
-    ssh_opts = " -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-    ssh = f"""ssh -R 6666:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
+    ssh_opts = " -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o      ServerAliveInterval=60"
+    ssh = f"""ssh -C -R 6666:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
     # --python python2
     run(f"""sshuttle --dns -e '{ssh}' -x {ip}/{netmask} -r {endpoint} 0/0""")
     sys.exit(1)
