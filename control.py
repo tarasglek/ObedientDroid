@@ -2,6 +2,7 @@
 from subprocess import check_output, call
 import json
 import sys
+import os.path
 # https://gist.github.com/me7/12ad7c823a1b5d1a061dceb4fcd72b87
 # https://stackoverflow.com/questions/18924968/using-adb-to-access-a-particular-ui-control-on-the-screen
 def run(cmd):
@@ -21,7 +22,7 @@ def termux():
     run("adb shell am start -n com.termux/.app.TermuxActivity")
 
 def vpn(endpoint):
-    run("adb kill-server")
+    # run("adb kill-server")
     run("adb forward tcp:8022 tcp:8022")
     #ensure forward worked
     print(run("adb forward --list |  grep tcp:8022"))
@@ -47,19 +48,13 @@ def vpn(endpoint):
     run(f"""sshuttle --dns -e '{ssh}' -x {ip}/{netmask} -r {endpoint} 0/0""")
     sys.exit(1)
 
-# per https://vic.demuzere.be/articles/using-systemd-user-units/
-def enable_startup(endpoint):
-    run("mkdir -p ~/.config/systemd/user/ && cp android-tether.service ~/.config/systemd/user/")
-    run(f"sed -i s':SSH_ENDPOINT:{endpoint}:' ~/.config/systemd/user/android-tether.service")
-    run("systemctl --user daemon-reload")
-    run("sudo loginctl enable-linger $USER")
-    run("systemctl --user enable android-tether")
-
-def main(mode, arg):
+def main(mode):
     if mode == "vpn":
-        vpn(arg)
-    elif mode == "enable-startup":
-        enable_startup(arg)
+        prefix = os.path.dirname(__file__)
+        if prefix == "":
+            prefix = "."
+        config = json.load(open(prefix + "/config.json"))
+        vpn(config["ssh"])
 
 if __name__ == "__main__":
     main(*sys.argv[1:])

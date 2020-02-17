@@ -1,0 +1,14 @@
+[Unit]
+Description=picks up google duo calls
+After=android-tether.service
+
+[Service]
+ExecStart=%h/ObedientDroid/logcat-and-run.py
+Restart=always
+RestartSec=30
+#disable systemd disabling things if they restart too much
+StartLimitIntervalSec=0
+Type=simple
+
+[Install]
+WantedBy=default.target
