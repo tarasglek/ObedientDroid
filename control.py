@@ -31,21 +31,18 @@ def vpn(endpoint):
     # TODO: wonder how ip route output looks like when there is no outside routing
     output = run("ip route get 1.1.1.1").split("\n")[0].split(' ')
     wwan = output[4]
-    # get extended details for wwan interface
-    wwan_details = [
-        interface
-            for interface in json.loads(run("ip -j -p  addr show " + wwan))
-                if interface.get('ifname', None) == wwan]
-    # only do ipv4
-    addr_info = [details for details in wwan_details[0]['addr_info'] if details['family'] == 'inet'][0]
-    # get netmask and local ip
-    ip = addr_info['local']
-    netmask = addr_info['prefixlen']
+    # get extended details for local interfaces
+    exclude_ls = []
+    for iface in json.loads(run("ip -j -p  addr show ")):
+        for info in iface['addr_info']:
+            if info['family'] == 'inet':
+                exclude_ls.append("-x {}/{}".format(info['local'],info['prefixlen']))
+    exclude_str = (" ".join(exclude_ls))
     # dont do interactive prompts
     ssh_opts = " -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o      ServerAliveInterval=60"
     ssh = f"""ssh -C -R 6666:localhost:22 {ssh_opts} -o ProxyCommand="ssh -W %h:%p localhost -p 8022 {ssh_opts}" """
     # --python python2
-    run(f"""sshuttle --dns -e '{ssh}' -x {ip}/{netmask} -r {endpoint} 0/0""")
+    run(f"""sshuttle --dns -e '{ssh}' {exclude_str} -r {endpoint} 0/0""")
     sys.exit(1)
 
 def main(mode):
